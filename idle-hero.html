@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>放置文字侠客</title>
+    <style>
+        :root {
+            --bg-dark: #1a1a2e;
+            --bg-card: #16213e;
+            --accent: #e94560;
+            --text: #eaeaea;
+            --text-dim: #a0a0a0;
+            --gold: #ffd700;
+            --green: #4ade80;
+            --red: #f87171;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 16px;
+        }
+        
+        .container { max-width: 600px; margin: 0 auto; }
+        
+        h1 {
+            text-align: center;
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+            color: var(--accent);
+            text-shadow: 0 0 10px rgba(233,69,96,0.5);
+        }
+        
+        .card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .hero-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        
+        .stat {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        
+        .stat-label { color: var(--text-dim); }
+        .stat-value { font-weight: bold; }
+        .stat-value.gold { color: var(--gold); }
+        .stat-value.green { color: var(--green); }
+        .stat-value.red { color: var(--red); }
+        
+        .level-badge {
+            display: inline-block;
+            background: var(--accent);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+        
+        .progress-bar {
+            height: 8px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent), var(--gold));
+            transition: width 0.3s;
+        }
+        
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 14px;
+            margin-top: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary {
+            background: var(--accent);
+            color: white;
+        }
+        
+        .btn-primary:active { transform: scale(0.98); }
+        
+        .btn-secondary {
+            background: rgba(255,255,255,0.1);
+            color: var(--text);
+        }
+        
+        .battle-log {
+            max-height: 200px;
+            overflow-y: auto;
+            font-size: 0.85rem;
+            line-height: 1.6;
+        }
+        
+        .log-entry {
+            padding: 6px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            animation: fadeIn 0.3s;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .enemy-hp { color: var(--red); }
+        .gain-exp { color: var(--green); }
+        
+        .equipment { margin-top: 12px; }
+        
+        .equip-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 6px;
+            margin-bottom: 8px;
+        }
+        
+        .equip-bonus { color: var(--gold); font-size: 0.85rem; }
+        
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        
+        .tab {
+            flex: 1;
+            padding: 10px;
+            text-align: center;
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        
+        .tab.active { background: var(--accent); }
+        
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        
+        @media (max-width: 480px) {
+            body { padding: 12px; }
+            h1 { font-size: 1.5rem; }
+            .hero-info { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏮 放置文字侠客 🏮</h1>
+        
+        <div class="card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <span class="level-badge">Lv.<span id="heroLevel">1</span></span>
+                <span class="gold">💰 <span id="gold">0</span></span>
+            </div>
+            
+            <div class="hero-info">
+                <div>
+                    <div class="stat">
+                        <span class="stat-label">生命</span>
+                        <span class="stat-value red"><span id="hp">100</span>/<span id="maxHp">100</span></span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">攻击力</span>
+                        <span class="stat-value"><span id="atk">10</span></span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">防御力</span>
+                        <span class="stat-value"><span id="def">5</span></span>
+                    </div>
+                </div>
+                <div>
+                    <div class="stat">
+                        <span class="stat-label">经验值</span>
+                        <span class="stat-value green"><span id="exp">0</span>/<span id="expNeed">100</span></span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="expBar" style="width:0%"></div>
+                    </div>
+                    <div class="stat" style="margin-top:12px">
+                        <span class="stat-label">杀敌数</span>
+                        <span class="stat-value"><span id="killCount">0</span></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('battle')">⚔️ 战斗</div>
+            <div class="tab" onclick="switchTab('equip')">⚔️ 装备</div>
+            <div class="tab" onclick="switchTab('log')">📜 战报</div>
+        </div>
+        
+        <div id="tab-battle" class="tab-content active">
+            <div class="card">
+                <div style="text-align:center; margin-bottom:12px;">
+                    <span class="level-badge">当前敌人: <span id="enemyLevel">1</span>级</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">敌人生命</span>
+                    <span class="stat-value red"><span id="enemyHp">50</span>/<span id="enemyMaxHp">50</span></span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="enemyHpBar" style="width:100%; background: var(--red);"></div>
+                </div>
+                <button class="btn btn-primary" onclick="attack()">⚔️ 攻击</button>
+                <button class="btn btn-secondary" onclick="toggleAuto()">🤖 自动战斗: <span id="autoStatus">关闭</span></button>
+            </div>
+        </div>
+        
+        <div id="tab-equip" class="tab-content">
+            <div class="card equipment">
+                <h3 style="margin-bottom:12px;">🎒 装备栏</h3>
+                <div class="equip-item">
+                    <span>🗡️ 武器</span>
+                    <span id="weaponName">无</span>
+                    <span class="equip-bonus" id="weaponBonus"></span>
+                </div>
+                <div class="equip-item">
+                    <span>🛡️ 防具</span>
+                    <span id="armorName">无</span>
+                    <span class="equip-bonus" id="armorBonus"></span>
+                </div>
+                <button class="btn btn-secondary" onclick="buyEquip()">🛒 购买装备</button>
+            </div>
+        </div>
+        
+        <div id="tab-log" class="tab-content">
+            <div class="card">
+                <div class="battle-log" id="battleLog">
+                    <div class="log-entry">欢迎来到放置文字侠客世界！</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // 游戏状态
+        let game = {
+            hero: {
+                level: 1,
+                hp: 100,
+                maxHp: 100,
+                atk: 10,
+                def: 5,
+                exp: 0,
+                expNeed: 100,
+                gold: 0,
+                killCount: 0
+            },
+            enemy: {
+                level: 1,
+                hp: 50,
+                maxHp: 50,
+                atk: 8,
+                expReward: 20,
+                goldReward: 10
+            },
+            equipment: {
+                weapon: null,
+                armor: null
+            },
+            autoBattle: false
+        };
+        
+        const weapons = [
+            { name: "木剑", atk: 5, price: 50 },
+            { name: "铁剑", atk: 15, price: 200 },
+            { name: "钢剑", atk: 30, price: 800 },
+            { name: "玄铁剑", atk: 60, price: 3000 },
+            { name: "倚天剑", atk: 120, price: 10000 }
+        ];
+        
+        const armors = [
+            { name: "布衣", def: 3, price: 50 },
+            { name: "皮甲", def: 8, price: 200 },
+            { name: "铁甲", def: 18, price: 800 },
+            { name: "锁子甲", def: 35, price: 3000 },
+            { name: "金丝甲", def: 70, price: 10000 }
+        ];
+        
+        let autoInterval = null;
+        
+        // 切换标签页
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById('tab-' + tab).classList.add('active');
+        }
+        
+        // 攻击
+        function attack() {
+            const heroAtk = getHeroAtk();
+            const heroDef = getHeroDef();
+            
+            // 英雄攻击敌人
+            const damage = Math.max(1, heroAtk - game.enemy.def * 0.5);
+            game.enemy.hp -= damage;
+            addLog(`你对敌人造成 <span class="gain-exp">${Math.floor(damage)}</span> 点伤害`);
+            
+            // 更新敌人血条
+            updateEnemyHp();
+            
+            // 检查敌人是否死亡
+            if (game.enemy.hp <= 0) {
+                enemyDie();
+                return;
+            }
+            
+            // 敌人反击
+            const enemyDamage = Math.max(1, game.enemy.atk - heroDef * 0.5);
+            game.hero.hp -= enemyDamage;
+            addLog(`敌人对你造成 <span class="enemy-hp">${Math.floor(enemyDamage)}</span> 点伤害`);
+            
+            // 检查英雄是否死亡
+            if (game.hero.hp <= 0) {
+                heroDie();
+            }
+            
+            updateUI();
+        }
+        
+        // 敌人死亡
+        function enemyDie() {
+            game.hero.exp += game.enemy.expReward;
+            game.hero.gold += game.enemy.goldReward;
+            game.hero.killCount++;
+            
+            addLog(`敌人死亡！获得 <span class="gain-exp">${game.enemy.expReward}</span> 经验，<span class="gold">${game.enemy.goldReward}</span> 金币`);
+            
+            // 检查升级
+            if (game.hero.exp >= game.hero.expNeed) {
+                levelUp();
+            }
+            
+            // 生成新敌人
+            spawnEnemy();
+        }
+        
+        // 升级
+        function levelUp() {
+            game.hero.level++;
+            game.hero.exp -= game.hero.expNeed;
+            game.hero.expNeed = Math.floor(game.hero.expNeed * 1.5);
+            game.hero.maxHp = Math.floor(game.hero.maxHp * 1.2);
+            game.hero.hp = game.hero.maxHp;
+            game.hero.atk = Math.floor(game.hero.atk * 1.15);
+            game.hero.def = Math.floor(game.hero.def * 1.15);
+            
+            addLog(`🎉 升级了！现在是 <span class="level-badge">Lv.${game.hero.level}</span>！属性大幅提升！`);
+        }
+        
+        // 英雄死亡
+        function heroDie() {
+            game.hero.hp = Math.floor(game.hero.maxHp * 0.5);
+            game.hero.exp = Math.max(0, game.hero.exp - Math.floor(game.hero.expNeed * 0.2));
+            game.enemy.level = Math.max(1, game.enemy.level - 1);
+            
+            addLog(`💀 你被敌人击败了！等级下降，经验损失`);
+            
+            spawnEnemy();
+            updateUI();
+        }
+        
+        // 生成新敌人
+        function spawnEnemy() {
+            game.enemy.level = Math.max(1, game.hero.level + Math.floor(Math.random() * 3) - 1);
+            game.enemy.maxHp = Math.floor(30 + game.enemy.level * 20);
+            game.enemy.hp = game.enemy.maxHp;
+            game.enemy.atk = Math.floor(5 + game.enemy.level * 3);
+            game.enemy.expReward = Math.floor(15 + game.enemy.level * 8);
+            game.enemy.goldReward = Math.floor(5 + game.enemy.level * 5);
+            
+            addLog(`⚔️ 出现了 <span class="level-badge">Lv.${game.enemy.level}</span> 敌人！`);
+        }
+        
+        // 获取英雄攻击力
+        function getHeroAtk() {
+            let atk = game.hero.atk;
+            if (game.equipment.weapon) {
+                atk += weapons[game.equipment.weapon].atk;
+            }
+            return atk;
+        }
+        
+        // 获取英雄防御力
+        function getHeroDef() {
+            let def = game.hero.def;
+            if (game.equipment.armor) {
+                def += armors[game.equipment.armor].def;
+            }
+            return def;
+        }
+        
+        // 切换自动战斗
+        function toggleAuto() {
+            game.autoBattle = !game.autoBattle;
+            document.getElementById('autoStatus').textContent = game.autoBattle ? '开启' : '关闭';
+            
+            if (game.autoBattle) {
+                autoInterval = setInterval(attack, 1000);
+                addLog(`🤖 自动战斗已开启`);
+            } else {
+                clearInterval(autoInterval);
+                addLog(`🤖 自动战斗已关闭`);
+            }
+        }
+        
+        // 购买装备
+        function buyEquip() {
+            const weaponIdx = game.equipment.weapon !== null ? game.equipment.weapon + 1 : 0;
+            const armorIdx = game.equipment.armor !== null ? game.equipment.armor + 1 : 0;
+            
+            let msg = "📦 可购买装备：\n\n";
+            
+            // 武器
+            msg += "🗡️ 武器：\n";
+            for (let i = weaponIdx; i < weapons.length; i++) {
+                const w = weapons[i];
+                const owned = game.equipment.weapon === i ? " (已装备)" : "";
+                msg += `${i + 1}. ${w.name} +${w.atk}攻击 💰${w.price}${owned}\n`;
+            }
+            
+            msg += "\n🛡️ 防具：\n";
+            for (let i = armorIdx; i < armors.length; i++) {
+                const a = armors[i];
+                const owned = game.equipment.armor === i ? " (已装备)" : "";
+                msg += `${i + 1}. ${a.name} +${a.def}防御 💰${a.price}${owned}\n`;
+            }
+            
+            msg += `\n💰 当前金币：${game.hero.gold}`;
+            
+            const choice = prompt(msg + "\n\n输入编号购买（0取消）：");
+            if (!choice) return;
+            
+            const idx = parseInt(choice) - 1;
+            
+            if (idx >= weaponIdx && idx < weapons.length) {
+                buyItem('weapon', idx, weapons);
+            } else if (idx >= armorIdx && idx < armors.length) {
+                buyItem('armor', idx - weapons.length + weaponIdx, armors);
+            }
+        }
+        
+        function buyItem(type, idx, items) {
+            const item = items[idx];
+            if (game.hero.gold < item.price) {
+                addLog(`💰 金币不足！需要 ${item.price} 金币`);
+                return;
+            }
+            
+            game.hero.gold -= item.price;
+            game.equipment[type] = idx;
+            addLog(`🛒 购买了 ${item.name}！`);
+            updateUI();
+        }
+        
+        // 更新UI
+        function updateUI() {
+            document.getElementById('heroLevel').textContent = game.hero.level;
+            document.getElementById('gold').textContent = game.hero.gold;
+            document.getElementById('hp').textContent = Math.floor(game.hero.hp);
+            document.getElementById('maxHp').textContent = game.hero.maxHp;
+            document.getElementById('atk').textContent = getHeroAtk();
+            document.getElementById('def').textContent = getHeroDef();
+            document.getElementById('exp').textContent = Math.floor(game.hero.exp);
+            document.getElementById('expNeed').textContent = game.hero.expNeed;
+            document.getElementById('expBar').style.width = (game.hero.exp / game.hero.expNeed * 100) + '%';
+            document.getElementById('killCount').textContent = game.hero.killCount;
+            
+            // 装备
+            if (game.equipment.weapon !== null) {
+                const w = weapons[game.equipment.weapon];
+                document.getElementById('weaponName').textContent = w.name;
+                document.getElementById('weaponBonus').textContent = '+' + w.atk;
+            }
+            if (game.equipment.armor !== null) {
+                const a = armors[game.equipment.armor];
+                document.getElementById('armorName').textContent = a.name;
+                document.getElementById('armorBonus').textContent = '+' + a.def;
+            }
+            
+            updateEnemyHp();
+        }
+        
+        function updateEnemyHp() {
+            document.getElementById('enemyLevel').textContent = game.enemy.level;
+            document.getElementById('enemyHp').textContent = Math.max(0, Math.floor(game.enemy.hp));
+            document.getElementById('enemyMaxHp').textContent = game.enemy.maxHp;
+            document.getElementById('enemyHpBar').style.width = (Math.max(0, game.enemy.hp) / game.enemy.maxHp * 100) + '%';
+        }
+        
+        // 添加战报
+        function addLog(text) {
+            const log = document.getElementById('battleLog');
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.innerHTML = text;
+            log.insertBefore(entry, log.firstChild);
+            
+            // 限制显示数量
+            while (log.children.length > 50) {
+                log.removeChild(log.lastChild);
+            }
+        }
+        
+        // 初始化
+        updateUI();
+        addLog(`🏮 欢迎来到放置文字侠客！`);
+        addLog(`💡 点击"攻击"或开启"自动战斗"开始游戏`);
+    </script>
+</body>
+</html>
